@@ -1,1 +1,28 @@
 
+library(ggplot2) # Install these packages using "tool" --> "install Packages"
+library(dplyr)
+library(tidyverse)
+
+# The codes beolow show some statistics of alol the parameters in Production. Table
+View(summary(Production.Table))
+
+# The codes below show the max avalue of parameters in the production table. More statistic should be done on each parameters.
+Statistics_parameters <- Production.Table %>%
+  group_by(Reservoir) %>%
+  summarize(Max_cum_gas = max(Cum.Gas, na.rm = TRUE),
+            Max_cum_oil = max(Cum.Oil, na.rm = TRUE),
+            Max_cum_water = max(Cum.Water, na.rm = TRUE),
+            Max_first_qo = max(First.Month.Oil, na.rm = TRUE),
+            Max_first_qg = max(First.Month.Gas, na.rm = TRUE),
+            Max_first_qw = max(First.Month.Water, na.rm = TRUE))
+
+# The codes below show how to plot a density plot using R
+ggplot(data =Production.Table, aes(Production.Table$Cum.Gas, fill=Production.Table$Reservoir))+
+  geom_density(alpha = 0.1)+ # adjsut the transparency of filled color.
+  xlab("Cumulative Gas Volume, 10^6 mmcf")+ ylab("Density")+
+  theme(panel.background = element_rect(fill = "white", colour = "black"))+
+ # theme(legend.position = "none")+ comment this if no legend is wanted
+  theme(plot.title = element_text(size=18, face="bold"),
+  legend.key = element_rect(colour = NA, fill = NA),
+ legend.justification = c(1,1), legend.position = c(0.8,0.9))+
+ scale_x_continuous(limits = c(0, 1000000),breaks = c(0, 200000, 400000, 600000, 800000, 1000000), labels = c("0", "2", "4","6","8","10"))
