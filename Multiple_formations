@@ -1,0 +1,157 @@
+library(maps)
+library(mapdata)
+library(rgdal)
+library('sf')
+library(maptools)
+library(raster)
+library("dplyr")          ## load
+library(ggplot2)
+library(bcmaps)
+library(plotly)
+library(forcats)
+loac_rec_new<-load_rec %>%
+  filter(first_month_water>0)
+ # na.omit(first_month_water) 
+
+load_recovery <- as.numeric(loac_rec_new$first_month_water)/as.numeric(loac_rec_new$total_base_water_volume)/0.031746
+summary(load_recovery)
+new_load <-cbind(load_recovery, loac_rec_new)
+summary(load_rec$first_24_water)
+summary(load_rec$total_base_water_volume)
+summary(as.numeric(new_load$load_recovery))
+well_group<-table(production$Reservoir)
+View(s)
+
+FORM_group<-table(Wells.Table$Target.Formation)
+View(FORM_group)
+
+Rearranged_form <- with(production, ifelse(Reservoir %in% c("BAKKEN", "BAKKEN POOL"), "BAKKEN",
+                                          ifelse(Reservoir %in% c("EAGLEFORD","EAGLEFORD SHALE"), "EAGLEFORD",
+                                                 ifelse(Reservoir %in% c("MARCELLUS SHALE", "MARCELLUS SHALE (UNCONVENTIONAL)"), "MARCELLUS",
+                                                        ifelse(Reservoir %in% c("WOLFCAMP","WOLFCAMP (GAS)"), "WOLFCAMP",
+                                                               ifelse(Reservoir %in% c("UTICA SHALE","UTICA SHALE (UNCONVENTIONAL)"),"UTICA", 
+                                                                      ifelse(Reservoir %in% c("BARNETT SHALE"), "BARNETT",
+                                                                             ifelse(Reservoir %in% c("MONTEREY"), "MONTEREY",
+                                                                                    ifelse(Reservoir %in% c("NIOBRARA"), "NIOBRARA",
+                                                                                           ifelse(Reservoir %in% c("PERMIAN"), "PERMIAN",
+                                                                                                  ifelse(Reservoir %in% c("FAYETTEVILLE"), "FAYETTEVILLE",
+                                                                                                         ifelse(Reservoir %in% c("WOODFORD"), "WOODFORD", "NA"
+                                                                                                  ))))))))))))
+                                                               
+newdata_prod <-  cbind(Rearranged_form, production)
+                                 
+
+Rearranged_form_Well <- with(Wells.Table, ifelse(Target.Formation %in% c("BAKKEN"), "BAKKEN",
+                                           ifelse(Target.Formation %in% c("EAGLEFORD","EAGLEFORD SHALE","EAGLE FORD","EAGLE FORD SHALE","EAGLE FORD-1"), "EAGLEFORD",
+                                                  ifelse(Target.Formation %in% c("MARCELLUS"), "MARCELLUS",
+                                                         ifelse(Target.Formation %in% c("WOLFCAMP"), "WOLFCAMP",
+                                                                ifelse(Target.Formation %in% c("UTICA","UTICA THROUGH POINT PLEASANT)"),"UTICA", 
+                                                                       ifelse(Target.Formation %in% c("BARNETT SHALE"), "BARNETT",
+                                                                              ifelse(Target.Formation %in% c("MONTEREY"), "MONTEREY",
+                                                                                     ifelse(Target.Formation %in% c("NIOBRARA","CODELL-NIOBRARA"), "NIOBRARA",
+                                                                                            ifelse(Target.Formation %in% c("PERMIAN"), "PERMIAN",
+                                                                                                   ifelse(Target.Formation %in% c("FAYETTEVILLE","FAYETTEVILLE SHALE"), "FAYETTEVILLE",
+                                                                                                          ifelse(Target.Formation %in% c("WOODFORD"), "WOODFORD", "NA"
+                                                                                                          ))))))))))))
+newdata_well <-  cbind(Rearranged_form_Well, Wells.Table)
+                              
+Filtered_is_NM_Re <-newdata_well %>%
+    #na.omit(Rearranged_form_Well) %>%
+  filter(Rearranged_form_Well != "NA" & as.numeric(newdata_well$True.Vertical.Depth) > 0)
+View(table(Filtered_is_NM_Re$Rearranged_form_Well))
+
+
+Bakken_selected <- c("BAKKEN", "BAKKEN POOL") #Selcting Bakken wells
+selectedf_Bakken <- production %>%
+ # na.omit(formation_code)
+filter(Reservoir %in% Bakken_selected)
+
+BARNETT_selected <- c("BARNETT SHALE") #Selcting BARNETT wells
+selectedf_Barnett <- production %>%
+  # na.omit(formation_code)
+  filter(Reservoir %in% BARNETT_selected )
+
+ 
+Eagleford_selected <- c("EAGLEFORD","EAGLEFORD SHALE")
+selectedf_EF <- production %>%
+  # na.omit(formation_code)
+  filter(Reservoir %in% Eagleford_selected)
+
+Marcellus_selected <- c("MARCELLUS SHALE", "MARCELLUS SHALE (UNCONVENTIONAL)") #Selcting Marcellus wells
+selectedf_Marcellus <- production %>%
+  # na.omit(formation_code)
+  filter(Reservoir %in% Marcellus_selected)
+
+Monterey_selected <- c("MONTEREY") #Selcting Monterey wells
+selectedf_MONTEREY <- production %>%
+  # na.omit(formation_code)
+  filter(Reservoir %in% Monterey_selected)
+
+Niobrara_selected <- c("NIOBRARA") #Selcting Monterey wells
+selectedf_Niobrara <- production %>%
+  # na.omit(formation_code)
+  filter(Reservoir %in% Niobrara_selected)
+
+Permian_selected <-c("PERMIAN")
+selectedf_Permian <- production %>%
+  # na.omit(formation_code)
+  filter(Reservoir %in% Permian_selected)
+
+Fay_selected <-c("FAYETTEVILLE")
+selectedf_fayetteville <- production %>%
+  # na.omit(formation_code)
+  filter(Reservoir %in% Fay_selected)
+
+Wolfcamp_selected <-c("WOLFCAMP","WOLFCAMP (GAS)")
+selectedf_Wolfcamp <- production %>%
+  # na.omit(formation_code)
+  filter(Reservoir %in% Wolfcamp_selected)
+
+Woodford_selected <-c("WOODFORD")
+selectedf_Wolfcamp <- production %>%
+  # na.omit(formation_code)
+  filter(Reservoir %in% Woodford_selected)
+
+
+Utica_selected <-c("UTICA SHALE","UTICA SHALE (UNCONVENTIONAL)")
+selectedf_Wolfcamp <- production %>%
+  # na.omit(formation_code)
+  filter(Reservoir %in% Utica_selected)
+
+#p <- ggplot(Filtered_is_NM, aes(x = fct_reorder(Target.Formation, True.Vertical.Depth, FUN= median), y=True.Vertical.Depth))
+p1<-ggplot(Filtered_is_NM_Re , aes(fct_reorder(Rearranged_form_Well, True.Vertical.Depth), y = True.Vertical.Depth))+ 
+    geom_boxplot()+ coord_flip()+
+  theme(panel.background = element_rect(fill = "white", colour = "black"))+ theme(text = element_text(size=18))+
+ theme(legend.position = "none")+ylab("True Vertical Depth, ft") + xlab("")
+  
+
+
+# The codes below show how to plot a density plot using R
+p2<-ggplot(data =Filtered_is_NM_Re, aes(True.Vertical.Depth, fill=Rearranged_form_Well))+
+  facet_wrap(Filtered_is_NM_Re$Rearranged_form_Well,ncol = 2)+
+  #geom_vline(data=Filtered_is_NM_Re, aes(xintercept = median(True.Vertical.Depth), colour = Rearranged_form_Well))+
+  geom_density(alpha = 0.5)+ # adjsut the transparency of filled color.
+  scale_color_gradientn(colours = rainbow(10))+
+  xlab("TVD, 1000 ft")+ ylab("Density")+
+  theme(panel.background = element_rect(fill = "white", colour = "black"))+
+  theme(legend.position = "none")+ #comment this if no legend is wanted
+ # theme(plot.title = element_text(size=18, face="bold"),
+        #legend.key = element_rect(colour = NA, fill = NA),
+      # legend.justification = c(1,1), legend.position = c(0.95,0.9))+
+  scale_x_continuous(limits = c(0, 20000),breaks = c(0, 5000, 10000, 15000, 20000), labels = c("0","5", "10", "15", "20"))
+
+p3 <-ggplot(new_load , aes(fct_reorder(reservoir, load_recovery), y = load_recovery))+ 
+  geom_boxplot()+ coord_flip()+
+  theme(panel.background = element_rect(fill = "white", colour = "black"))+ theme(text = element_text(size=18))+
+  theme(legend.position = "none")+ylab("1-month Load Recovery, fraction") + xlab("")+
+ # scale_y_continuous(limits = c(0, 0.5),breaks = c(0, 0.1, 0.2, 0.3, 0.4, 0.5), labels = c("0","0.1", "0.2", "0.3", "0.4", "0.5"))
+  ylim(0, 2)
+
+p4 <- ggplot(new_load, aes(load_recovery)) + stat_ecdf() +
+   facet_wrap(new_load$reservoir,ncol = 2)+  xlim(0, 2)+ylim(0,1)+
+  theme(panel.background = element_rect(fill = "white", colour = "black"))+ theme(text = element_text(size=18))+
+   xlab("First-month Load Recovery")+ ylab("CDF")+
+  theme(plot.title = element_text(size=18, face="bold"),
+legend.key = element_rect(colour = NA, fill = NA),
+legend.justification = c(1,1), legend.position = c(0.95,0.75))
+p4
