@@ -1,0 +1,175 @@
+---
+title: "Descriptive Analysis of Fracturing Data for Montney Wells"
+author: "Dr. Yingkun Fu"
+date: "2021/1/11"
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+---
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+ encoding=encoding,
+ output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
+ 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+Here I present the statistic analysis of fracturing data for wells completed in the Montney wells. The fracturing, well information, and production data were deposited in .csv files (retrieved from www.bcogc.ca on December of 2020). These wells are identified with a unique well ID named UWI.
+
+In this section, I mainly analyzed the fracturing information of _wells. These fracturing information include number of fracturing stages, completion types, fracturing treatment pressures (breakdown pressure, maximum treating pressure, average treating pressure, ISIP), frac-gradient, total fracturing volume (TIV), total volume of energizers (N2 and/or CO2), proppant type, and Acid volume. 
+
+First, I load the packages required for descriptive analysis and data data manipulation. 
+
+```{r packages,echo=FALSE,warning=FALSE, message=FALSE}
+library(RMariaDB)
+library(grid)
+library(gridExtra)
+library("ggExtra")
+library(ggplot2)
+library(cowplot)
+library(RMariaDB)
+library(grid)
+library(gridExtra)
+library("ggExtra")
+library(ggplot2)
+library(cowplot)
+library(dplyr)
+library(lubridate) ##This package is used for Data Manipulation
+library(ggforce) ##This package is used for Visualiztion
+library(Hmisc) ##This package is used for descriptive analysis 
+library(psych) ##This package is used for descriptive analysis 
+library(summarytools)
+library(arsenal)
+```
+## Question-1: How many Montney wells in total?
+
+I first import the well information, fracturing data, and production data from three files. I then performed a descriptive analysis of the wells' formation. A shown in the table below, the results show that 2862 wells completed in the Montney Formation (ID=5000), followed by 292  DOIG PHOSPHATE-MONTNEY wells (ID=4997), 36 BLUESKY-GETHING-MONTNEY wells (ID=4990), 36 JEAN MARIE wells (ID=8200), 28 Horn River wells (ID for MU/OP and EV: 8295 and 8550), with less than 300 wells left. 
+
+```{r import_files, echo=FALSE,warning=FALSE,results='asis'}
+#Import csv files
+well_index<-read.csv('F:/Code_factory/Rcodes/Flowback/well_data/screen/well_index.csv')
+hydraulic_fracture<-read.csv('F:/Code_factory/Rcodes/Flowback/well_data/screen/hydraulic_fracture.csv')
+prod_mon<-read.csv('F:/Code_factory/Rcodes/Flowback/well_data/screen/prod_mon.csv')
+#Filter these wells where fracturing data are available
+selectedf_well_index <-  well_index %>%
+  #  na.omit(rs$formation_id) %>%
+  filter(UWI %in% hydraulic_fracture$UWI)
+#Statistic describing the frequency of wells completed in different Zones.   
+freq(selectedf_well_index$Form, plain.ascii = FALSE,order='freq',report.nas = FALSE,totals = FALSE,cumul = FALSE, style = "rmarkdown")
+```
+
+## Question-2: What are the fluid types of thes Montney wells?
+I further examined the fluid types of these wells. As shown the table below, there are 2703 and 138 gas and oil wells (94% and 5%), respectively. To date, about 96% wells (n=2750) are actively producing, while about 3% of wells (n=92) has been suspended.  
+
+```{r montney_wells, echo=FALSE,warning=FALSE,results='asis'}
+#Filter the well and fracturing information for Montney wells
+Mont_wells<-selectedf_well_index%>%
+  filter(Form=="5000")
+freq(Mont_wells$Mode, plain.ascii = FALSE,order='freq',report.nas = FALSE,totals = FALSE,cumul = FALSE, style = "rmarkdown")
+freq(Mont_wells$Fluid, plain.ascii = FALSE,order='freq',report.nas = FALSE,totals = FALSE,cumul = FALSE, style = "rmarkdown")
+# 
+# Frac_data_Mont<-hydraulic_fracture%>%
+#     filter(UWI %in% Mont_wells$UWI)
+# 
+# selectedf_well_index <-  well_index %>%
+#   #  na.omit(rs$formation_id) %>%
+#   filter(UWI %in% hydraulic_fracture$UWI)
+# #Statistic describing the frequency of wells completed in different Zones.   
+# freq(selectedf_well_index$Form, plain.ascii = FALSE,order='freq',report.nas = FALSE,totals = FALSE,cumul = FALSE, style = "rmarkdown")
+```
+
+## Question-3: What are the breakdown pressure, ISIP, average fracturing pressure, and maximum treatment pressure, frac-gradient, and average rate for these fractured Montney wells? Are these any difference between different completion strategies?
+
+### Fracturing Pressure and Rates
+The table below show the statistic results of fracturing pressures, injected fluid volume, and injection rate for 72387 fracturing stages of 2903 Montney wells. As listed below, a large percent (37.5%) of ISIP and frac gradient data were unavailable to Montney wells.Overall, the mean ISIP is 24.341 Mpa (standard deviation: 11.149), and the mean frac gradient is 21.543 KPa/m (SD: 6.768). It should be noted that frac gradient is commonly calcated by dividing ISIP by the true vertical depth. One may raise a question about how to explain the variation in frac gradient which has eliminate the effects of depth. To answer this question, one may need to understand what control the frac gradient? (Outliers should be excluded from the statistics of ISIP, frac_gradient, and maximum treatment pressure)
+
+The Montney wells mainly fractured with two strategies: single-cluster (SGNL) and open-hole completion, which account for about 50% of completion strategies each. Although they are fractured with a pretty close average pumping rate, interestingly, comparatively analysis show a higher ISIP, maximum treatment pressure, breakdown pressure, average treatment pressure in the single-shot completed wells (SGNL) than those wells with open-hole completion strategy. The difference between the pressure can be several Mpa. How to explain the difference in fracturing parameters between these two srategies? One may expect a pressure loss is required for fracturing fluid flowing from werllbore into perforation holes, and that flow from tubing to casing. The pressure loss can thus be several Megapasica.  
+
+```{r frac_mon_wells, echo=FALSE,warning=FALSE,results='asis'}
+#Filter the well and fracturing information for Montney wells
+ 
+Frac_data_Mont<-hydraulic_fracture%>%
+    filter(UWI %in% Mont_wells$UWI )
+Frac_mon_p<-Frac_data_Mont%>%  select(10,21:26)
+Frac_mon_p_r<-Frac_data_Mont%>%  select(21:26)
+table_one <- tableby(Frac_mon_p$COMPLTN.TYPE ~ ., data = Frac_mon_p) 
+summary(table_one, title = "Sumamry of Fracturing-pressure Parameters")
+ 
+```
+### Fracturing Stages and Fluid Volume
+As listed in the table below, the Montney wells were fractured with an average number of 25 stages (the mode value is 9 stages). The maximum number os stages is 125. The average injected volume of fracturing water is about 14154 m3. The nitrogen is injected at high volume at the pressure >50 MPa, and thus expected to be under liquid condition. The average total injected volume of N2 at surface condition is 320588 standard m3. 
+
+The table below summarizes the statistic results of fracturing-fluid parameters. The results show a total number of 67333 stages of 2602 wells were fractured only with water, while the other 5054 stages were fractured with energizers including Nitrogen and Carbon Dioxide. Among these stages, 27 out of 5054 stages were fractured with pure CO2 (n=4 wells), 4942 out of 5054 stages with N2 (n=360 wells), and the remaining 84 stages were fractured with the combination of CO2 and N2 (6 wells).  
+
+Among these stages fractured with pure CO2, the ratio of fracturing water to CO2 injected volume is about 1:1 for each stage. The mean injected volume of CO2-fracture wells is about 152 m3 (SD=123) per stage.The mean total injected volume for hydraulic fractured wells is about 552 (SD=381) m3 per stage. 
+
+```{r frac_mon_V_wells, echo=FALSE,warning=FALSE,results='asis'}
+#Filter the well and fracturing information for Montney wells
+Frac_mon_fv<-Frac_data_Mont%>%  select(17,27:29)
+Frac_mon_fv<-mutate(Frac_mon_fv,Energizer_type=toupper(Frac_mon_fv$ENERGIZER.TYPE))
+table_fv <- tableby(Frac_mon_fv$Energizer_type ~ ., data = Frac_mon_fv) 
+summary(table_fv, title = "Sumamry of Fracturing-fluid Parameters")
+```
+
+
+```{r frac_mon_vol_wells, echo=FALSE,warning=FALSE,results='asis'}
+#Filter the well and fracturing information for Montney wells
+ 
+calculate_TIV_gross<- Frac_data_Mont %>% 
+  #filter(!is.na(multiple_v) & !is.na(date))%>%
+  group_by(UWI) %>%
+  summarise(ENERGIZER.TYPE=toupper(ENERGIZER.TYPE),n_stages=n(),
+            # pbreak_ave=ave(BREAK.DOWN.PRESSURE..MPa.[!is.na(BREAK.DOWN.PRESSURE..MPa.)]),
+            # isip_max=max(INST.SHUT.IN.PRESSURE..MPa.),
+            # isip_ave=ave(INST.SHUT.IN.PRESSURE..MPa.[!is.na(INST.SHUT.IN.PRESSURE..MPa.)]),
+            # avg_pressure_ave=ave(AVG.TREATING.PRESSURE..MPa.[!is.na(AVG.TREATING.PRESSURE..MPa.)]),
+            # # avg_pressure_min=min(AVG.TREATING.PRESSURE..MPa.[AVG.TREATING.PRESSURE..MPa.>0]),
+            # frac_gradient_ave=ave(FRAC.GRADIENT..KPa.m.[!is.na(FRAC.GRADIENT..KPa.m.)]),
+            # # frac_gradient_min=min(FRAC.GRADIENT..KPa.m.[FRAC.GRADIENT..KPa.m.>0]),
+            total_co2_v=sum(TOTAL.CO2.PUMPED..m3.),
+            total_N2_v=sum(TOTAL.N2.PUMPED..scm.),
+            TIV=sum(TOTAL.FLUID.PUMPED..m3.))
+calculate_TIV_gross_uniq<-unique(calculate_TIV_gross)
+cols_remove <- c("UWI")
+calculate_TIV_gross_c<-calculate_TIV_gross_uniq[, !(colnames(calculate_TIV_gross_uniq) %in% cols_remove)]
+table_one <- tableby(calculate_TIV_gross_c$ENERGIZER.TYPE ~ ., data = calculate_TIV_gross_c) 
+summary(table_one, title = "Sumamry of Fracturing Parameters")
+# 
+# selectedf_well_index <-  well_index %>%
+#   #  na.omit(rs$formation_id) %>%
+#   filter(UWI %in% hydraulic_fracture$UWI)
+# #Statistic describing the frequency of wells completed in different Zones.   
+# freq(selectedf_well_index$Form, plain.ascii = FALSE,order='freq',report.nas = FALSE,totals = FALSE,cumul = FALSE, style = "rmarkdown")
+```
+## Data Visualization -->
+
+Here, I visualize the distribution of fracturing parameters investigated on Montney wells. I also explored the inter-dependency between the parameters through correlation analysis.    
+
+```{r pressure, echo=FALSE} 
+Frac_mon_p_r<-Frac_mon_p_r %>% 
+  rename(
+    ISIP = INST.SHUT.IN.PRESSURE..MPa.,
+    P_break = BREAK.DOWN.PRESSURE..MPa.,
+    P_MAX=MAX.TREATING.PRESSURE..MPa.,
+    P_AVG=AVG.TREATING.PRESSURE..MPa.,
+    q_AVG=AVG.RATE..m3.min.,
+    Frac_gradient=FRAC.GRADIENT..KPa.m.
+  )
+out_ISIP <- boxplot.stats(Frac_mon_p_r$ISIP)$out
+out_P_break <- boxplot.stats(Frac_mon_p_r$P_break)$out
+out_P_MAX <- boxplot.stats(Frac_mon_p_r$P_MAX)$out
+out_P_AVG <- boxplot.stats(Frac_mon_p_r$P_AVG)$out
+out_q_AVG=boxplot.stats(Frac_mon_p_r$q_AVG)$out
+out_Frac_gradient <- boxplot.stats(Frac_mon_p_r$Frac_gradient)$out
+Frac_mon_p_re<-Frac_mon_p_r %>% 
+  filter(!ISIP %in% out_ISIP & !P_MAX %in% out_P_MAX & !P_break %in% out_P_break &!P_AVG %in%out_P_AVG & ! Frac_gradient %in%  out_Frac_gradient  & !q_AVG %in% out_q_AVG)
+  
+pairs.panels(Frac_mon_p_re,smooth = TRUE,scale = FALSE, alpha = 0.2,density=TRUE,ellipses=TRUE,col='red',main = 'Pearson product moment correlation coefficient')
+``` 
+
+<!-- Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot. -->
